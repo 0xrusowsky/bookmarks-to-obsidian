@@ -20,7 +20,7 @@ let sessionCodeVerifier: string
 export const register = (app: Application) => {
     app.use(session({ secret: 'a lil project to synch my bookmarks' }))
 
-    // define a route handler for the default home page
+    // Define a route handler for the default home page
     app.get("/", (request, response) => {
         response.render("index")
     })

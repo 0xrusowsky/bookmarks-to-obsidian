@@ -39,6 +39,25 @@ export function processAuthors(authors: UserV2[]) {
     return userDict
 }
 
+
+/*
+--> ff file structure:
+    ---
+    tags: tweet
+    author: ${b.author}
+    date: ${b.date}
+    ---
+    **Tweet URL**
+    ${b.url}
+
+    ${b.iframe}
+
+--> f file structure:
+    [[${title}]]
+    ${b.iframe}
+
+    ---
+*/
 export function processBookmarks(bookmarks: Bookmark[], vaultPath: string, filePath: string) {
 
     let prevData: string
