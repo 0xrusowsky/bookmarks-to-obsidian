@@ -43,10 +43,12 @@ export const register = (app: Application) => {
         const codeVerifier = sessionCodeVerifier
 
         if (!sessionCodeVerifier || !state || !sessionState || !code) {
-            return response.status(400).send('You denied the app or your session expired!')
+            console.error('You denied the app or your session expired!')
+            return response.render("error")
         }
         if (state !== sessionState) {
-            return response.status(400).send('Stored tokens didnt match!')
+            console.error('Stored tokens didnt match!')
+            return response.render("error")
         }
 
         // Obtain access token
@@ -57,7 +59,7 @@ export const register = (app: Application) => {
                 const bookmarks = await getBookmarks(authData.client)
                 const output = processBookmarks(bookmarks, vaultPath, filePath)
 
-                output ? response.render("success") : response.render("error")
+                return output ? response.render("success") : response.render("error")
             })
             .catch(() => response.status(403).send('Invalid verifier or access tokens!'))
     })
