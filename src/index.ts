@@ -1,9 +1,10 @@
 import dotenv from "dotenv";
 import express from "express";
+import session from "express-session"
 import path from "path";
 import * as fs from 'fs';
 import * as https from 'https';
-import * as routes from "./routes/router";
+import routes from "./routes/router";
 
 dotenv.config();
 const PORT = parseInt(process.env.SERVER_PORT, 10);
@@ -16,14 +17,21 @@ const app = express();
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 
+// Register middleware
 app.use(express.static("public"));
 
-// Configure routes
-routes.register(app);
-
-app.get("/", (request, response) => {
-    response.render("index")
+app.use((req, res, next) => {
+    console.log(`${req.method}:${req.url}`)
+    next()
 })
+
+app.use(session({
+    secret: 'a lil project to synch my bookmarks',
+    resave: false,
+    saveUninitialized: false
+}))
+
+app.use(routes)
 
 app.listen(PORT, "127.0.0.1", () => {
     console.log(`Server is listening on http://127.0.0.1:${PORT}`);

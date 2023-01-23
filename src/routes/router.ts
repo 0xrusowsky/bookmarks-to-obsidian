@@ -2,10 +2,8 @@
 
 import { TwitterApi } from "twitter-api-v2"
 import { getBookmarks, processBookmarks } from "../utils"
-import { Application } from "express"
-import session from "express-session"
+import { Router, Application } from "express"
 import dotenv from "dotenv"
-
 
 dotenv.config()
 const CLIENT_ID = process.env.CLIENT_ID
@@ -14,53 +12,57 @@ const CALLBACK_URL = process.env.CALLBACK_URL
 const vaultPath = process.env.VAULT_PATH
 const filePath = vaultPath + process.env.UNPROCESSED_NAME
 
-let sessionState: string
-let sessionCodeVerifier: string
+const router = Router()
+export default router
 
-export const register = (app: Application) => {
-    app.use(session({ secret: 'a lil project to synch my bookmarks' }))
+// Define a route handler for the default home page
+router.get("/", (request, response) => {
+    response.render("index")
+})
 
-    // Define a route handler for the default home page
-    app.get("/", (request, response) => {
-        response.render("index")
-    })
+router.get("/test", (request, response) => {
+    response.render("index")
+})
 
-    app.get('/auth', (request, response) => {
-        // Obtain access token
-        const client = new TwitterApi({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET })
+router.get('/auth', (request, response) => {
+    // Obtain access token
+    const client = new TwitterApi({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET })
 
-        const { url, codeVerifier, state } = client.generateOAuth2AuthLink(CALLBACK_URL, { scope: ['tweet.read', 'users.read', `bookmark.read`] })
+    const { url, codeVerifier, state, codeChallenge } = client.generateOAuth2AuthLink(CALLBACK_URL, { scope: ['tweet.read', 'users.read', `bookmark.read`] })
 
-        sessionState = state
-        sessionCodeVerifier = codeVerifier
+    request.session.user = {
+        state,
+        codeVerifier,
+        codeChallenge
+    }
 
-        return response.redirect(url)
-    })
+    return response.redirect(url)
+})
 
-    app.get('/oauth/callback', (request, response) => {
-        const state = request.query.state
-        const code = String(request.query.code)
-        const codeVerifier = sessionCodeVerifier
+router.get('/oauth/callback', (request, response) => {
+    const { codeVerifier, state: sessionState } = request.session.user
 
-        if (!sessionCodeVerifier || !state || !sessionState || !code) {
-            console.error('You denied the app or your session expired!')
-            return response.render("error")
-        }
-        if (state !== sessionState) {
-            console.error('Stored tokens didnt match!')
-            return response.render("error")
-        }
+    const state = request.query.state
+    const code = String(request.query.code)
 
-        // Obtain access token
-        const client = new TwitterApi({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET })
+    if (!codeVerifier || !state || !sessionState || !code) {
+        console.error('You denied the app or your session expired!')
+        return response.render("error")
+    }
+    if (state !== sessionState) {
+        console.error('Stored tokens didnt match!')
+        return response.render("error")
+    }
 
-        client.loginWithOAuth2({ code, codeVerifier, redirectUri: CALLBACK_URL })
-            .then(async (authData) => {
-                const bookmarks = await getBookmarks(authData.client)
-                const output = processBookmarks(bookmarks, vaultPath, filePath)
+    // Obtain access token
+    const client = new TwitterApi({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET })
 
-                return output ? response.render("success") : response.render("error")
-            })
-            .catch(() => response.status(403).send('Invalid verifier or access tokens!'))
-    })
-}
+    client.loginWithOAuth2({ code, codeVerifier, redirectUri: CALLBACK_URL })
+        .then(async (authData) => {
+            const bookmarks = await getBookmarks(authData.client)
+            const output = processBookmarks(bookmarks, vaultPath, filePath)
+
+            return output ? response.render("success") : response.render("error")
+        })
+        .catch(() => response.status(403).send('Invalid verifier or access tokens!'))
+})
