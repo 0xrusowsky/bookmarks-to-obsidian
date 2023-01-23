@@ -6,7 +6,6 @@ import { Application } from "express"
 import session from "express-session"
 import dotenv from "dotenv"
 
-
 dotenv.config()
 const CLIENT_ID = process.env.CLIENT_ID
 const CLIENT_SECRET = process.env.CLIENT_SECRET
@@ -14,14 +13,19 @@ const CALLBACK_URL = process.env.CALLBACK_URL
 const vaultPath = process.env.VAULT_PATH
 const filePath = vaultPath + process.env.UNPROCESSED_NAME
 
-let sessionState: string
-let sessionCodeVerifier: string
-
 export const register = (app: Application) => {
-    app.use(session({ secret: 'a lil project to synch my bookmarks' }))
+    app.use(session({
+        secret: 'a lil project to synch my bookmarks',
+        resave: false,
+        saveUninitialized: false
+    }))
 
     // Define a route handler for the default home page
     app.get("/", (request, response) => {
+        response.render("index")
+    })
+
+    app.get("/test", (request, response) => {
         response.render("index")
     })
 
@@ -29,20 +33,24 @@ export const register = (app: Application) => {
         // Obtain access token
         const client = new TwitterApi({ clientId: CLIENT_ID, clientSecret: CLIENT_SECRET })
 
-        const { url, codeVerifier, state } = client.generateOAuth2AuthLink(CALLBACK_URL, { scope: ['tweet.read', 'users.read', `bookmark.read`] })
+        const { url, codeVerifier, state, codeChallenge } = client.generateOAuth2AuthLink(CALLBACK_URL, { scope: ['tweet.read', 'users.read', `bookmark.read`] })
 
-        sessionState = state
-        sessionCodeVerifier = codeVerifier
+        request.session.user = {
+            state,
+            codeVerifier,
+            codeChallenge
+        }
 
         return response.redirect(url)
     })
 
     app.get('/oauth/callback', (request, response) => {
+        const { codeVerifier, state: sessionState } = request.session.user
+
         const state = request.query.state
         const code = String(request.query.code)
-        const codeVerifier = sessionCodeVerifier
 
-        if (!sessionCodeVerifier || !state || !sessionState || !code) {
+        if (!codeVerifier || !state || !sessionState || !code) {
             console.error('You denied the app or your session expired!')
             return response.render("error")
         }
