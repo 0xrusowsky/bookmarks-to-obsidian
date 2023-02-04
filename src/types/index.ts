@@ -6,14 +6,22 @@ declare module 'express-session' {
             codeVerifier: string;
             codeChallenge: string;
             state: string;
-        }
+        },
+        obsidianBookmarks: {
+            existing: {
+                title: string;
+                content: string;
+            }[];
+            unprocessed: string;
+        },
+        twitterBookmarks: Bookmark[]
     }
+}
 
-    interface SessionData {
-        user: {
-            codeVerifier: string;
-            codeChallenge: string;
-            state: string;
-        }
-    }
+export interface Bookmark {
+    created_at: string
+    date: string
+    author: string
+    iframe: string
+    url: string
 }

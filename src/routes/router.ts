@@ -21,7 +21,7 @@ router.get("/", (request, response) => {
 })
 
 router.get("/test", (request, response) => {
-    response.render("index")
+    response.render("read")
 })
 
 router.get('/auth', (request, response) => {
@@ -60,6 +60,7 @@ router.get('/oauth/callback', (request, response) => {
     client.loginWithOAuth2({ code, codeVerifier, redirectUri: CALLBACK_URL })
         .then(async (authData) => {
             const bookmarks = await getBookmarks(authData.client)
+            request.session.twitterBookmarks = bookmarks
             const output = processBookmarks(bookmarks, vaultPath, filePath)
 
             return output ? response.render("success") : response.render("error")

@@ -1,14 +1,7 @@
 import { TweetV2, TwitterApi, UserV2 } from "twitter-api-v2"
 import * as fs from 'fs'
 import 'fs-access'
-
-interface Bookmark {
-    created_at: string
-    date: string
-    author: string
-    iframe: string
-    url: string
-}
+import { Bookmark } from "./types"
 
 export const getBookmarks = async (loggedClient: TwitterApi) => {
     const bookmarks = await loggedClient.v2.bookmarks({
