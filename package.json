@@ -2,7 +2,8 @@
   "name": "bookmarks-to-obsidian",
   "version": "1.0.0",
   "description": "A small project to sync Twitter bookmarks with an Obsidian vault.",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.modern.js",
   "scripts": {
     "clean": "rimraf dist/*",
     "copy-assets": "ts-node tools/copyAssets",
